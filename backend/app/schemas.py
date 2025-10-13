@@ -1,6 +1,6 @@
 # app/schemas.py
 
-from pydantic import BaseModel, ConfigDict # <-- Import ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator # <-- Import ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -40,6 +40,14 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+
+    # bcrypt only supports up to 72 bytes; enforce a safe limit
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, v: str) -> str:
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password too long: must be 72 bytes or fewer")
+        return v
 
 class User(UserBase):
     id: int
