@@ -7,6 +7,8 @@ const ChallengeCard = ({ challenge }) => {
   const [feedback, setFeedback] = useState(null);
   const [error, setError] = useState(null);
   const { isAuthenticated } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,8 +21,11 @@ const ChallengeCard = ({ challenge }) => {
     }
 
     try {
+      setSubmitting(true);
       const response = await api.submitAnswer(challenge.id, answer);
       setFeedback(response.data.message);
+      // Mark as completed on success
+      setCompleted(true);
     } catch (err) {
         if (err.response && err.response.data) {
           // Server may return validation errors as objects; stringify safely
@@ -46,6 +51,8 @@ const ChallengeCard = ({ challenge }) => {
           setError("An unexpected error occurred. Please try again.");
         }
       console.error(err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -66,7 +73,7 @@ const ChallengeCard = ({ challenge }) => {
   }
 
   return (
-    <div className="challenge-card">
+    <div className={`challenge-card ${completed ? 'ring-2 ring-green-400/60' : ''}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">{displayTitle}</h3>
@@ -97,22 +104,38 @@ const ChallengeCard = ({ challenge }) => {
       </div>
       <p className="text-slate-600 dark:text-slate-300 mb-6 flex-grow leading-relaxed">{challenge.question}</p>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Type your answer here"
-          className="input-field"
-          required
-        />
-        <button
-          type="submit"
-          className="btn-primary w-full"
-        >
-          Submit Answer
-        </button>
-      </form>
+      {isAuthenticated ? (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Type your answer here"
+            className="input-field"
+            required
+            disabled={completed || submitting}
+          />
+          <button
+            type="submit"
+            className={`btn-primary w-full ${completed ? 'opacity-70 cursor-not-allowed' : ''}`}
+            disabled={completed || submitting}
+          >
+            {completed ? 'Completed ✓' : (submitting ? 'Submitting…' : 'Submit Answer')}
+          </button>
+        </form>
+      ) : (
+        <div className="space-y-3">
+          <input
+            type="text"
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            placeholder="Login to answer"
+            className="input-field"
+            disabled
+          />
+          <a href="/login" className="btn-secondary w-full inline-flex justify-center">Log in to submit</a>
+        </div>
+      )}
 
       {/* Feedback Section */}
       {feedback && (
