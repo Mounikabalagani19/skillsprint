@@ -12,9 +12,17 @@ def get_user_by_username(db: Session, username: str):
 import secrets
 import string
 
-def generate_join_code(length=8):
+def generate_join_code(db: Session, length=8, max_attempts=10):
+    """Generate a unique join code that doesn't already exist in the database"""
     alphabet = string.ascii_uppercase + string.digits
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    for _ in range(max_attempts):
+        code = ''.join(secrets.choice(alphabet) for _ in range(length))
+        # Check if code already exists
+        existing = db.query(models.User).filter(models.User.join_code == code).first()
+        if not existing:
+            return code
+    # If we couldn't find a unique code after max_attempts, increase length
+    return ''.join(secrets.choice(alphabet) for _ in range(length + 2))
 
 def create_user(db: Session, user: schemas.UserCreate):
     from . import security
@@ -34,7 +42,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     
     # 1. Generate unique code for Admin/Mentor
     if user.role in ["admin", "mentor"]:
-        db_user.join_code = generate_join_code()
+        db_user.join_code = generate_join_code(db)
     
     # 2. Linking logic based on provided code (which is passed in user.join_code field from signup)
     if user.role == "mentor" and user.join_code:
