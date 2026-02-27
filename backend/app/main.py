@@ -56,8 +56,13 @@ def ensure_seed_data():
     It's idempotent: only inserts missing titles, so it's safe to run every boot.
     """
     try:
-        # Create all tables if they don't exist
         from .database import Base, engine
+        
+        # Force recreate all tables (drops old schema if exists)
+        # ONLY for initial deployment - remove this after first successful deploy
+        print("Dropping all tables to apply schema changes...")
+        Base.metadata.drop_all(bind=engine)
+        print("Creating all tables with current schema...")
         Base.metadata.create_all(bind=engine)
         print("Database tables initialized")
         
