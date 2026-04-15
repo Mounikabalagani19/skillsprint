@@ -20,19 +20,36 @@ def read_challenges(
 ):
     """
     Retrieve only the challenges for the authenticated user's current nth day.
-    nth day is calculated from the user's signup_date and cycles every 30 days.
+    The cycle length is based on the highest active configured day number.
+    Example: if challenges exist up to Day 31, recycle after Day 31.
     """
+    active_titles = db.query(models.Challenge.title).filter(models.Challenge.is_active == True).all()
+    max_configured_day = 1
+    for (title,) in active_titles:
+        m = re.search(r"Day\s*(\d+)", title or "", re.IGNORECASE)
+        if not m:
+            continue
+        try:
+            day_num = int(m.group(1))
+        except Exception:
+            continue
+        if day_num > max_configured_day:
+            max_configured_day = day_num
+
     # Calculate days since signup (1-based)
     # If no user (anonymous) or missing signup_date, default to day 1
     if not current_user or not getattr(current_user, "signup_date", None):
         nth = 1
     else:
         days_since = (date.today() - current_user.signup_date.date()).days + 1
-        nth = ((days_since - 1) % 30) + 1
+        nth = ((days_since - 1) % max_configured_day) + 1
 
     all_challenges = crud.get_challenges(db, skip=skip, limit=limit*5)
     filtered = []
+    seen_keys = set()
     for c in all_challenges:
+        if not getattr(c, 'is_active', True):
+            continue
         m = re.search(r"Day\s*(\d+)", c.title or "", re.IGNORECASE)
         if m:
             try:
@@ -40,6 +57,10 @@ def read_challenges(
             except Exception:
                 continue
             if day_num == nth:
+                key = ((c.title or "").strip().lower(), (c.question or "").strip().lower())
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
                 filtered.append(c)
     return filtered
 

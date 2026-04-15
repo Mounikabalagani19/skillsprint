@@ -75,9 +75,13 @@ def get_student_performance(
         ).scalar() or 0
         
         # Count module progress
-        modules_completed = db.query(func.count(models.ModuleProgress.qa_id)).filter(
+        default_modules_completed = db.query(func.count(models.ModuleProgress.qa_id)).filter(
             models.ModuleProgress.user_id == student.id
         ).scalar() or 0
+        custom_modules_completed = db.query(func.count(models.CustomModuleProgress.question_id)).filter(
+            models.CustomModuleProgress.user_id == student.id
+        ).scalar() or 0
+        modules_completed = default_modules_completed + custom_modules_completed
         
         # Get recent submissions (last 30 days)
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
@@ -202,6 +206,15 @@ def get_activity_timeline(
         models.ModuleProgress.user_id.in_(student_ids),
         models.ModuleProgress.completed_at >= start_date
     ).group_by(func.date(models.ModuleProgress.completed_at)).all()
+
+    # Custom module completions
+    daily_custom_module_stats = db.query(
+        func.date(models.CustomModuleProgress.completed_at).label('date'),
+        func.count(models.CustomModuleProgress.question_id).label('module_completions')
+    ).filter(
+        models.CustomModuleProgress.user_id.in_(student_ids),
+        models.CustomModuleProgress.completed_at >= start_date
+    ).group_by(func.date(models.CustomModuleProgress.completed_at)).all()
     
     # Combine data by date
     date_data = {}
@@ -217,6 +230,17 @@ def get_activity_timeline(
     for stat in daily_module_stats:
         if stat.date in date_data:
             date_data[stat.date]["module_completions"] = stat.module_completions or 0
+        else:
+            date_data[stat.date] = {
+                "date": stat.date if stat.date else "",
+                "total_submissions": 0,
+                "correct_submissions": 0,
+                "module_completions": stat.module_completions or 0
+            }
+
+    for stat in daily_custom_module_stats:
+        if stat.date in date_data:
+            date_data[stat.date]["module_completions"] += stat.module_completions or 0
         else:
             date_data[stat.date] = {
                 "date": stat.date if stat.date else "",

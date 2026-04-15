@@ -12,6 +12,7 @@ import Modules from "./pages/Modules.jsx";
 import ModulePython from "./pages/ModulePython.jsx";
 import ModuleLevel from "./pages/ModuleLevel.jsx";
 import ModuleJava from "./pages/ModuleJava.jsx";
+import ModuleCustom from "./pages/ModuleCustom.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import MentorDashboard from "./pages/MentorDashboard.jsx";
 import MentorTools from "./pages/MentorTools.jsx";
@@ -45,6 +46,7 @@ function App() {
             <Route path="/modules/python/:level" element={<ProtectedRoute><ModuleLevel moduleName="python" /></ProtectedRoute>} />
             <Route path="/modules/java" element={<ProtectedRoute><ModuleJava /></ProtectedRoute>} />
             <Route path="/modules/java/:level" element={<ProtectedRoute><ModuleLevel moduleName="java" /></ProtectedRoute>} />
+            <Route path="/modules/custom/:moduleId" element={<ProtectedRoute><ModuleCustom /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />

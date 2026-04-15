@@ -58,10 +58,6 @@ def ensure_seed_data():
     try:
         from .database import Base, engine
         
-        # Force recreate all tables (drops old schema if exists)
-        # ONLY for initial deployment - remove this after first successful deploy
-        print("Dropping all tables to apply schema changes...")
-        Base.metadata.drop_all(bind=engine)
         print("Creating all tables with current schema...")
         Base.metadata.create_all(bind=engine)
         print("Database tables initialized")

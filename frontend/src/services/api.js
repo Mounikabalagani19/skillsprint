@@ -70,6 +70,14 @@ export default {
     return apiClient.post(`/modules/${level}/submit`, payload); // back-compat
   },
 
+  getCustomModuleItems(moduleId) {
+    return apiClient.get(`/modules/custom/${moduleId}`);
+  },
+
+  submitCustomModuleAnswer(moduleId, payload) {
+    return apiClient.post(`/modules/custom/${moduleId}/submit`, payload);
+  },
+
   getAnnouncements() {
     return apiClient.get("/announcements/");
   },
@@ -90,14 +98,6 @@ export default {
     return apiClient.post("/management/mentor/challenges", challenges);
   },
 
-  uploadPdfModule(formData) {
-    return apiClient.post("/management/mentor/modules/pdf", formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-  },
-
   // --- Analytics ---
   getStudentPerformance() {
     return apiClient.get('/analytics/student-performance');
@@ -105,6 +105,50 @@ export default {
 
   getActivityTimeline(days = 7) {
     return apiClient.get(`/analytics/activity-timeline?days=${days}`);
-  }
+  },
+
+  // --- Custom Modules (PDF generated) ---
+  uploadPdfModule(formData) {
+    return apiClient.post('/management/mentor/modules/pdf', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  saveCustomModule(payload) {
+    return apiClient.post('/management/mentor/modules/save', payload);
+  },
+
+  listCustomModules() {
+    return apiClient.get('/management/modules/custom');
+  },
+
+  getCustomModule(moduleId) {
+    return apiClient.get(`/management/modules/custom/${moduleId}`);
+  },
+
+  deleteCustomModule(moduleId) {
+    return apiClient.delete(`/management/modules/custom/${moduleId}`);
+  },
+
+  // --- Daily Challenges management ---
+  getAllChallengesAdmin() {
+    return apiClient.get('/management/mentor/challenges/all');
+  },
+
+  createChallengeManual(data) {
+    return apiClient.post('/management/mentor/challenges/single', data);
+  },
+
+  updateChallenge(id, data) {
+    return apiClient.put(`/management/mentor/challenges/${id}`, data);
+  },
+
+  deleteChallenge(id) {
+    return apiClient.delete(`/management/mentor/challenges/${id}`);
+  },
+
+  toggleChallengeActive(id) {
+    return apiClient.patch(`/management/mentor/challenges/${id}/toggle`);
+  },
 };
 

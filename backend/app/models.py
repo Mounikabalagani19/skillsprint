@@ -46,6 +46,7 @@ class Challenge(Base):
     question = Column(String)
     category = Column(String)
     answer = Column(String)
+    is_active = Column(Boolean, default=True, nullable=False, server_default='1')
 
     # NEW: Added the missing relationship back to the UserChallenge table
     users_completed = relationship("UserChallenge", back_populates="challenge")
@@ -96,3 +97,41 @@ class Announcement(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     mentor = relationship("User", back_populates="announcements")
+
+# --- CUSTOM MODULES (generated from PDF) ---
+from sqlalchemy import JSON
+
+class CustomModule(Base):
+    __tablename__ = "custom_modules"
+    id         = Column(Integer, primary_key=True, index=True)
+    name       = Column(String, index=True)
+    subject    = Column(String, default="Custom")
+    level      = Column(String, default="beginner")   # beginner | intermediate | expert
+    mentor_id  = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    questions = relationship("CustomModuleQuestion", back_populates="module",
+                             cascade="all, delete-orphan", lazy="select")
+    mentor    = relationship("User")
+
+class CustomModuleQuestion(Base):
+    __tablename__ = "custom_module_questions"
+    id            = Column(Integer, primary_key=True, index=True)
+    module_id     = Column(Integer, ForeignKey("custom_modules.id"))
+    question_type = Column(String)        # mcq | true_false | fill_blank
+    question_text = Column(String)
+    options       = Column(JSON, nullable=True)  # list[str] for MCQ / T-F
+    correct_answer= Column(String)
+    explanation   = Column(String, default="")
+
+    module = relationship("CustomModule", back_populates="questions")
+
+
+# --- CUSTOM MODULE PROGRESS TABLE ---
+# Tracks which custom module questions a user has completed correctly.
+class CustomModuleProgress(Base):
+    __tablename__ = "custom_module_progress"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    module_id = Column(Integer, ForeignKey("custom_modules.id"), primary_key=True)
+    question_id = Column(Integer, ForeignKey("custom_module_questions.id"), primary_key=True)
+    completed_at = Column(DateTime, default=datetime.utcnow)

@@ -11,10 +11,7 @@ challenges_to_add = [
     # Missing Day 1 frontend question (hyperlink tag)
     Challenge(title="Day 1: Hyperlink Tag", question="Which HTML tag is used to create a hyperlink?", category="Frontend", answer="<a>"),
     # Day 2
-        Challenge(title="Day 2: Reverse String", question="s = 'SkillSprint' → Output of print(s[::-1])?", category="Coding", answer="tnirpSllikS"),
-        Challenge(title="Day 2: Red Planet", question="Which planet is called the 'Red Planet'?", category="General Knowledge", answer="Mars"),
-        Challenge(title="Day 2: Three-digit Puzzle", question="I am a 3-digit number. Tens digit = ones digit + 5. Hundreds digit = tens digit – 8. What number am I?", category="Math", answer="194"),
-        Challenge(title="Day 2: Background Property", question="Which CSS property changes background color?", category="Frontend", answer="background-color"),
+    Challenge(title="Day 2: Reverse String", question="s = 'SkillSprint' → Output of print(s[::-1])?", category="Coding", answer="tnirpSllikS"),
     Challenge(title="Day 2: Red Planet", question="Which planet is called the 'Red Planet'?", category="General Knowledge", answer="Mars"),
     Challenge(title="Day 2: Three-digit Puzzle", question="I am a 3-digit number. Tens digit = ones digit + 5. Hundreds digit = tens digit – 8. What number am I?", category="Math", answer="194"),
     Challenge(title="Day 2: Background Property", question="Which CSS property changes background color?", category="Frontend", answer="background-color"),
@@ -171,12 +168,16 @@ def seed_database() -> int:
 
     db = SessionLocal()
     try:
-        # Check if challenges already exist to avoid duplicates
+        # Check if challenges already exist to avoid duplicates.
+        # Also dedupe the in-memory seed list by title before insert.
         existing_titles = {c.title for c in db.query(Challenge).all()}
-
-        new_challenges = [
-            c for c in challenges_to_add if c.title not in existing_titles
-        ]
+        seen_titles = set(existing_titles)
+        new_challenges = []
+        for c in challenges_to_add:
+            if c.title in seen_titles:
+                continue
+            seen_titles.add(c.title)
+            new_challenges.append(c)
 
         # If the Challenge model exposes a 'day' column, try to populate it by parsing the title
         import re
